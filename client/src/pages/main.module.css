@@ -1,0 +1,121 @@
+.container{
+  background :navy;
+  color: white;
+  height:100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 20px;
+}
+.parameterGroup{
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 44%;
+  padding:30px;
+}
+.parameter{
+  display: flex;
+  align-self: flex-start;
+  height: 40px;
+}
+.settingButton{
+  background-color: bisque;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 30px;
+}
+.uiForm {
+  display: flex;
+  flex-direction:row;
+  align-items: center;
+  margin-bottom: 4%;
+  width: 100%;
+  color: #777;
+}
+.uiForm label {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  width: 100px; 
+}
+.uiForm ut[type="text"] {
+  width: 50%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+.cityListbox{
+  width: 80%;
+}
+.timeInput {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* 入力ボックス同士の間隔 */
+}
+.selectedDays{
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  background-color: #007bff;
+  margin: 2%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.nonSelectedDays{
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  margin: 2%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.updateButton{
+  background-color: black;
+  color: white;
+  width: 100px;
+  padding: 10px 0;
+  border-radius: 10px;
+  margin-right: 10%;
+}
+.cancelButton{
+  background-color: #fff;
+  width: 100px;
+  padding: 10px 0;
+  border-radius: 10px;
+}
+.hidden{
+  display: none;
+  z-index: 1;
+}
+
+.modal{
+  position: fixed;
+  width: max(400px, 70%);
+  top: 40%;
+  left: 50%;
+  transform: translate(-40%, -40%);
+
+  padding: 20px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  /*gap: 15px; /* 各項目の縦の間隔 */
+
+
+  z-index: 2;
+}
+.mask{
+  background: rgba(0, 0, 0, 0.5);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
