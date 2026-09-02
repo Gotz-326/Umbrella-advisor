@@ -145,11 +145,6 @@ router.post(
   }
 );
 
-// npm i --save express-validator
-// npm i bcrypt
-// npm i jsonwebtoken
-// npm i dotenv
-
 // JWTの中身（Payload）の型
 interface CustomJwtPayload extends jwt.JwtPayload {
   userID: string; // トークンに入れている項目追加
@@ -209,14 +204,14 @@ router.patch(
       );
       if(!setting){
       logger.info({userID}, '設定データが見つかりませんでした');
-        res.status(404).json({
+        return res.status(404).json({
           success: false,
           message: '設定データが見つかりませんでした'
         })
       }
     } catch (err){
       logger.error({err}, 'データ更新に失敗しました');
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'データ更新に失敗しました'
       })
@@ -225,6 +220,82 @@ router.patch(
       success: true,
       message: '設定更新に成功しました',
     });
+  }
+);
+
+router.patch(
+  '/user-data',
+  checkAuth,
+  async (req: AuthRequest, res: Response) => {
+    if(!req.user) return res.status(401).json({message: '認証情報がありません'});
+    const {userID} = req.user;
+    const {userName} = req.body;
+    const settingData = {userName};
+    try{
+      const [setting, user] = await Promise.all([
+        Setting.findOneAndUpdate(
+          {userID},
+          {$set: settingData},
+          {new: true, runValidators:true}
+        ),
+        Auth.findOneAndUpdate(
+          {userID},
+          {$set: settingData},
+          {new: true, runValidators:true}
+        )
+      ]);
+      if(!setting){
+        logger.info({userID}, '設定データが見つかりませんでした');
+        return res.status(404).json({
+          success: false,
+          message: '設定データが見つかりませんでした'
+        })
+      }
+      if(!user){
+        logger.info({userID}, 'ユーザデータが見つかりませんでした');
+        return res.status(404).json({
+          success: false,
+          message: 'ユーザデータが見つかりませんでした'
+        })
+      }
+    } catch (err){
+      logger.error({err}, 'データ更新に失敗しました');
+      return res.status(500).json({
+        success: false,
+        message: 'データ更新に失敗しました'
+      })
+    }  
+    res.status(200).json({
+      success: true,
+      message: 'データ更新に成功しました',
+    });
+  }
+);
+
+router.delete(
+  '/account',
+  checkAuth,
+  async (req: AuthRequest, res: Response) => { 
+    if(!req.user) return res.status(401).json({message: '認証情報がありません'});
+    
+      try{
+        const userID = req.user.userID;
+        await Promise.all([
+          Auth.findOneAndDelete({ userID }),
+          Setting.findOneAndDelete({ userID })
+        ]);
+        res.clearCookie('token');
+        res.status(200).json({
+          success: true,
+          message: 'アカウント削除に成功しました',
+        });
+      } catch(err){
+        res.status(500).json({
+          success: false,
+          message: 'アカウント削除に失敗しました',
+        });
+      }
+    
   }
 );
 
