@@ -167,7 +167,9 @@ const MainPage = () => {
     setIsSettingModalOpen(false);
   };
   const editAccount = () => {
+    setEditingValues(settingValues);
     setisAccountModalOpen(true);
+    cancelAccount();
   };
   const cancelAccount = () => {
     setisAccountModalOpen(false);
@@ -185,6 +187,7 @@ const MainPage = () => {
         const data = await response.json();
         alert(data);
       }
+      cancelAccount();
     }
   };
   const cityOptions: CityOption[] = cities.map(c =>({
@@ -399,7 +402,7 @@ const MainPage = () => {
       </div>
       <div
         id="mask"
-        className={IsSettingModalOpen ? styles.mask : styles.hidden}
+        className={isAccountModalOpen ? styles.mask : styles.hidden}
       ></div>
     </>
   );
