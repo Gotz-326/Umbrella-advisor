@@ -1,5 +1,6 @@
 import express from 'express';
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import 'dotenv/config';
 import cors from 'cors';
 import {logger} from '../../../logger.ts';
@@ -145,11 +146,6 @@ router.post(
   }
 );
 
-// npm i --save express-validator
-// npm i bcrypt
-// npm i jsonwebtoken
-// npm i dotenv
-
 // JWTの中身（Payload）の型
 interface CustomJwtPayload extends jwt.JwtPayload {
   userID: string; // トークンに入れている項目追加
@@ -209,14 +205,14 @@ router.patch(
       );
       if(!setting){
       logger.info({userID}, '設定データが見つかりませんでした');
-        res.status(404).json({
+        return res.status(404).json({
           success: false,
           message: '設定データが見つかりませんでした'
         })
       }
     } catch (err){
       logger.error({err}, 'データ更新に失敗しました');
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'データ更新に失敗しました'
       })
@@ -225,6 +221,91 @@ router.patch(
       success: true,
       message: '設定更新に成功しました',
     });
+  }
+);
+
+router.patch(
+  '/user-data',
+  checkAuth,
+  async (req: AuthRequest, res: Response) => {
+    if(!req.user) return res.status(401).json({message: '認証情報がありません'});
+    const {userID} = req.user;
+    const {userName} = req.body;
+    const settingData = {userName};
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try{
+      const setting = await Setting.findOneAndUpdate(
+        {userID},
+        {$set: settingData},
+        {new: true, runValidators:true, session}
+      );
+      const user = await Auth.findOneAndUpdate(
+        {userID},
+        {$set: settingData},
+        {new: true, runValidators:true, session}
+      );
+      if(!setting){
+        await session.abortTransaction();
+        logger.info({userID}, '設定データが見つかりませんでした');
+        return res.status(404).json({
+          success: false,
+          message: '設定データが見つかりませんでした'
+        });
+      }
+      if(!user){
+        await session.abortTransaction();
+        logger.info({userID}, 'ユーザデータが見つかりませんでした');
+        return res.status(404).json({
+          success: false,
+          message: 'ユーザデータが見つかりませんでした'
+        });
+      }
+      await session.commitTransaction();
+    } catch (err){
+      await session.abortTransaction();
+      logger.error({err}, 'データ更新に失敗しました');
+      return res.status(500).json({
+        success: false,
+        message: 'データ更新に失敗しました'
+      });
+    } finally {
+      session.endSession();
+    } 
+    res.status(200).json({
+      success: true,
+      message: 'データ更新に成功しました',
+    });
+  }
+);
+
+router.delete(
+  '/account',
+  checkAuth,
+  async (req: AuthRequest, res: Response) => { 
+    if(!req.user) return res.status(401).json({message: '認証情報がありません'});
+    const session = await mongoose.startSession();
+      try{
+        const userID = req.user.userID;
+        session.startTransaction();
+        await Auth.findOneAndDelete({ userID }, {session});
+        await Setting.findOneAndDelete({ userID }, {session});
+        await session.commitTransaction();
+        res.clearCookie('token');
+        res.status(200).json({
+          success: true,
+          message: 'アカウント削除に成功しました',
+        });
+      } catch(err){
+        await session.abortTransaction();
+        res.status(500).json({
+          success: false,
+          message: 'アカウント削除に失敗しました',
+        });
+      } finally{
+        session.endSession();
+      }
+    
   }
 );
 

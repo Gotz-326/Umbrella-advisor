@@ -22,8 +22,10 @@
 }
 .settingButton{
   background-color: bisque;
+  color: black;
   border: none;
   border-radius: 10px;
+  margin: 10px;
   padding: 10px 30px;
 }
 .uiForm {
@@ -86,16 +88,23 @@
 }
 .cancelButton{
   background-color: #fff;
+  color: black;
   width: 100px;
   padding: 10px 0;
   border-radius: 10px;
+}
+.deleteButton{
+  color: red;
+  background-color: white;
+  border: none;
+  margin-top: 10%;
 }
 .hidden{
   display: none;
   z-index: 1;
 }
 
-.modal{
+.modalSetting{
   position: fixed;
   width: max(400px, 70%);
   top: 40%;
@@ -108,7 +117,14 @@
   flex-direction: column;
   /*gap: 15px; /* 各項目の縦の間隔 */
 
-
+  z-index: 2;
+}
+.modalAccount{
+  position: fixed;
+  width: max(400px, 70%);
+  top: 40%;
+  left: 50%;
+  transform: translate(-40%, -40%);
   z-index: 2;
 }
 .mask{
@@ -118,4 +134,5 @@
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 1;
 }

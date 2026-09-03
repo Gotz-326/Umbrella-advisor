@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { logger } from '../../../logger.ts';
 import styles from './signup.module.css';
-//import 'dotenv/config';
 
 // バックエンドで生成した「VAPIDの公開鍵」
 const publicKey = 'BDq6t0QhzhcmVpbWK3VBZnwaARUhUpSNq9G1VDh1BI0f_tXPDONRLhl6TESTh8A-PyFNoW3Oj1ChZA1dV4uXZGw';

@@ -35,7 +35,8 @@ const MainPage = () => {
   const [settingValues, setSettingValues] = useState(initialSettings);
   const [editingValues, setEditingValues] = useState(initialSettings);
   const [cities, setCities] = useState<Cities[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [IsSettingModalOpen, setIsSettingModalOpen] = useState(false);
+  const [isAccountModalOpen, setisAccountModalOpen] = useState(false);
   const daysOfWeek = ['日','月','火','水','木','金','土'];
   //const [selectedDays, setSelectedDays] = useState([]);
 
@@ -79,7 +80,7 @@ const MainPage = () => {
             });
             alert('通知設定を入力してください ' + setting.userName + 'さん');
 
-            setIsModalOpen(true);
+            setIsSettingModalOpen(true);
 
           } else{
             setSettingValues({
@@ -128,7 +129,22 @@ const MainPage = () => {
 
   const editSetting = () => {
     setEditingValues(settingValues);
-    setIsModalOpen(true);
+    setIsSettingModalOpen(true);
+  };
+
+  const updateAccount = async () => {
+    setSettingValues(editingValues);
+    const response  = await fetch('/api/users/user-data',{
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json'},
+      body: JSON.stringify(editingValues),
+      credentials: 'include',
+    });
+    if(!response.ok){
+      const data = await response.json();
+      alert(data);
+    }
+    cancelAccount();
   };
   const updateSetting = async () => {
 
@@ -148,9 +164,32 @@ const MainPage = () => {
     }
   };
   const cancelSetting = () => {
-    setIsModalOpen(false);
+    setIsSettingModalOpen(false);
   };
-
+  const editAccount = () => {
+    setEditingValues(settingValues);
+    setisAccountModalOpen(true);
+    cancelAccount();
+  };
+  const cancelAccount = () => {
+    setisAccountModalOpen(false);
+  };
+  const deleteAccount = async () => {
+    if(confirm('アカウントを削除します。よろしいですか？')){
+      const response = await fetch('/api/users/account', {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'include',
+      });
+      if(response.ok){
+        alert('アカウントを削除しました');
+      } else {
+        const data = await response.json();
+        alert(data);
+      }
+      cancelAccount();
+    }
+  };
   const cityOptions: CityOption[] = cities.map(c =>({
     value: c.en,
     label: c.ja,
@@ -164,7 +203,10 @@ const MainPage = () => {
     const val: string  = e.target.value;
     setEditingValues({...editingValues, border: val});
   };
-
+  const changeUserName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEditingValues({...editingValues, userName: val});
+  };
   const toggleDays = (e: React.MouseEvent<HTMLButtonElement>) => {
     const val: string = e.currentTarget.value;
 
@@ -247,12 +289,17 @@ const MainPage = () => {
             通知時刻：{settingValues.notificationTime}
           </div>
         </div>
-        <button className={styles.settingButton} onClick={editSetting}>
-          設定変更
-        </button>
+        <div>
+          <button className={styles.settingButton} onClick={editSetting}>
+            通知設定
+          </button>
+          <button className={styles.settingButton} onClick={editAccount}>
+            アカウント
+          </button>
+        </div>
       </div>
 
-      <div id="modal" className={isModalOpen ? styles.modal : styles.hidden}>
+      <div id="modalSetting" className={IsSettingModalOpen ? styles.modalSetting : styles.hidden}>
         <form>
           <div className={styles.uiForm}>
             <label>降水確率</label>
@@ -332,9 +379,30 @@ const MainPage = () => {
           </button>
         </form>
       </div>
+            <div id="modalAccount" className={isAccountModalOpen ? styles.modalAccount : styles.hidden}>
+        <form>
+          <div className={styles.uiForm}>
+            <label>ユーザ名</label>
+            <input type="text" value={editingValues.userName} onChange={(e) => changeUserName(e)}>
+              
+            </input>
+          </div>
+          <button className={styles.updateButton} type="button" onClick={updateAccount}>
+            更新
+          </button>
+          <button className={styles.cancelButton} type="button" onClick={cancelAccount}>
+            キャンセル
+          </button>
+          <div>
+          <button className={styles.deleteButton} type="button" onClick={deleteAccount}>
+            アカウント削除
+          </button>
+          </div>
+        </form>
+      </div>
       <div
         id="mask"
-        className={isModalOpen ? styles.mask : styles.hidden}
+        className={isAccountModalOpen ? styles.mask : styles.hidden}
       ></div>
     </>
   );
