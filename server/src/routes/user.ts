@@ -223,6 +223,40 @@ router.patch(
     });
   }
 );
+router.patch(
+  '/subscription',
+  checkAuth,
+  async (req: AuthRequest, res: Response) => {
+    if(!req.user) return res.status(401).json({message: '認証情報がありません'});
+    const {userID} = req.user;
+    const {subscription} = req.body;
+    const userData = {subscription};
+    try{
+      const user = await Auth.findOneAndUpdate(
+        {userID},
+        {$set: userData},
+        {new: true, runValidators:true}
+      );
+      if(!user){
+      logger.info({userID}, 'ユーザデータが見つかりませんでした');
+        return res.status(404).json({
+          success: false,
+          message: 'ユーザデータが見つかりませんでした'
+        })
+      }
+    } catch (err){
+      logger.error({err}, 'Subscription更新に失敗しました');
+      return res.status(500).json({
+        success: false,
+        message: 'Subscription更新に失敗しました'
+      })
+    }  
+    res.status(200).json({
+      success: true,
+      message: 'Subscription更新に成功しました',
+    });
+  }
+);
 
 router.patch(
   '/user-data',
