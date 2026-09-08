@@ -119,8 +119,31 @@ const MainPage = () => {
       }
     };
 
+    const syncSubscription = async () => {
+      const registration = await navigator.serviceWorker.ready;
+      const currentSubscription = await registration.pushManager.getSubscription();
+      
+      if (currentSubscription) {
+        try{
+          // サーバーに最新の subscription を送り直して更新（上書き）する
+          const response = await fetch('/api/users/subscription', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscription: currentSubscription,
+            }),
+            credentials: 'include',
+          });
+          if(!response.ok) alert('通知鍵の更新に失敗しました');
+        } catch(err){
+          console.error('通知鍵の更新に失敗しました: ', err);
+        }
+      }
+    };
+
     getSetting();
     getCities();
+    syncSubscription();
   }, [loading]);
 
   if (loading) {
