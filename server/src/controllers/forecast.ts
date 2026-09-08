@@ -1,19 +1,19 @@
 import express from 'express';
-import request from 'request';
 import 'dotenv/config';
-import cors from 'cors';
-//import nodemailer from 'nodemailer';
 import webpush, { PushSubscription } from 'web-push';
-import { body } from 'express-validator';
 import Auth from '../models/auth.ts';
+import City from '../models/city.ts';
 import Setting from '../models/setting.ts';
 import { logger } from '../../../logger.ts';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
-const port = process.env.PORT;
-const apikey = process.env.API_KEY;
 const publicKey = process.env.PUBLIC_KEY;
 const privateKey = process.env.PRIVATE_KEY;
-
+const TIMEZONE_OFFSET: Record<string, number> = {
+  JP: 9,
+};
 webpush.setVapidDetails(
   'mailto:mosh326@gmail.com',
   publicKey || '',
@@ -21,13 +21,9 @@ webpush.setVapidDetails(
 )
 
 interface ForecastItem {
-  pop: number;     // 降水確率 (0 〜 1)
-  dt_txt: string;  // 日時文字列 ("2026-09-05 12:00:00")
-}
-
-// API全体のレスポンス型
-interface WeatherResponse {
-  list: ForecastItem[];
+  time: string, // ISO 8601形式の時間の配列
+  pop: number, // 降水確率 (0 〜 100)
+  uvIndex: number,
 }
 
 // const test = async() =>{
@@ -42,7 +38,6 @@ interface WeatherResponse {
 // };
 
 const notifyForecast =  async () => {
-  //const url = `https://pro.openweathermap.org/data/2.5/forecast/hourly?q=${city}&units=metric&appid=${apikey}`;
   try{
 
     const infoToNotify = await getSubscriptionAndForecasts();
@@ -80,25 +75,25 @@ const sendNotification = async (userSubscription: PushSubscription, weatherMessa
 const getSubscriptionAndForecasts = async () =>{
   const users = await getFilteredSettings();
   if(!users) return;
-  //const subscriptionAndForecasts = users.map(user => {
+
+  const tzOffset = TIMEZONE_OFFSET.JP;
+  const now = dayjs.utc().add(tzOffset, 'hour')
+  const today = now.format('YYYY-MM-DD');
+  const tomorrow = now.add(1, 'day').format('YYYY-MM-DD');
   const subscriptionAndForecasts = await Promise.all(
     
-    users.map(async (user) => {
-    let isAlreadySet = false;
+  users.map(async (user) => {
+    const timeFrom = `${today}T${user.timeFrom}`;
+    const timeTo = user.timeFrom < user.timeTo? `${today}T${user.timeTo}`: `${tomorrow}T${user.timeTo}`;
     const forecasts = await getForecasts(user.city);
-    const timeFrom = convertStringToNumberOfDate(user.timeFrom);
-    const timeTo = convertStringToNumberOfDate(user.timeTo);
-    // forecasts.map(fc =>{
+    if(!forecasts) return null;
     for(const fc of forecasts){
-      // if(isAlreadySet) return;
-      const timeForecast = convertStringToNumberOfDate(fc.time);
+      const timeForecast = fc.time;
       if(timeFrom > timeForecast || timeForecast > timeTo) continue;
-      const pop = Number(fc.pop) * 100;
+      const pop = Number(fc.pop);
       if(user.border <= pop){
-        isAlreadySet = true;
-        //const auth = auths.find(a => a.userID === user.userID);
         try{
-          const auth = await Auth.findOne({userID: user.userID});
+          const auth = await Auth.findOne({userID: user.userID}).exec();
           const d = new Date(timeForecast);
           const adjustedTime = String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0');
           if(auth){
@@ -153,49 +148,39 @@ const getFilteredSettings = async () =>{
   }
 };
 
+const getForecasts = async (cityName: string) => {
+  //取得時刻～翌日24:00までのデータに絞り込んだ天気情報を取得する
+  try{
+    const city = await City.findOne({en: cityName}).exec();
+    if(!city) throw new Error(`都市取得に失敗しました City:${cityName}`);
+    const latitude = city.latitude;
+    const longitude = city.longitude;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=precipitation_probability,uv_index&timezone=Asia%2FTokyo`;
+    const response = await fetch(url);
+    if(!response.ok) throw new Error(`天気情報取得に失敗しました Status:${response.status}`);
+    const weatherData = await response.json();
 
+    const tzOffset = TIMEZONE_OFFSET.JP;
+    const now = dayjs.utc().add(tzOffset, 'hour')
+    const timeNow = now.format('YYYY-MM-DDTHH:00');
+    let index = weatherData.hourly.time.indexOf(timeNow);
+    if(index < 0) index = 0;
+    const times = weatherData.hourly.time.slice(index, 48);
+    const precipitationProbability = weatherData.hourly.precipitation_probability.slice(index, 48);
+    const uvIndex = weatherData.hourly.uv_index.slice(index, 48);
 
-const getForecasts = async (city: string) => {
+    const forecasts: ForecastItem[] = times.map((time: string, i: number) => ({
+        time: time, // ISO 8601形式の時間の配列
+        pop: precipitationProbability[i],
+        uvIndex: uvIndex[i],
+    }));
+    return forecasts;
 
-
-  const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apikey}`;
-  const response = await fetch(url);
-  if(!response.ok) throw new Error(`天気情報取得に失敗しました Status:${response.status}`);
-  const data = await response.json() as WeatherResponse;
-  const listResult = data.list.slice(0, 7); //要素7つ分×3h、21h先まで取得
-  const forecasts = listResult.map(result => ({
-    pop: result.pop,
-    time: result.dt_txt,
-  }));
-  return forecasts;
-};
-
-const convertStringToNumberOfDate = (time: string): number=>{
-  const timeAdjust = {
-    jp: 9
-  };
-  const date = new Date();
-  //UTC time from Web API '2027-07-09 00:00:00'
-  if(time.includes('-')){
-    time = time.split(' ')[1];
-    let [h, m, s] = time.split(':').map(Number);
-    h += timeAdjust.jp;
-    if(h >= 24){
-      h -= 24;
-      date.setDate(date.getDate() + 1);
-    }
-      return date.setHours(h, m, 0, 0);
-  } else {
-    //Local time '12:34'
-    let [h, m] = time.split(':').map(Number);
-    return date.setHours(h, m, 0, 0);
+  } catch(err){
+    logger.error({err}, 'データ参照に失敗しました');
+    return null;
   }
 };
-
-
-
-//https://vitejsvitey1kwsrms-blsm--5000--29a3b5f7.local-corp.webcontainer.io/api/forecast
-
 
 //export default test;
 export default notifyForecast;
