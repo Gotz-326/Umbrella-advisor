@@ -95,7 +95,7 @@ const getSubscriptionAndForecasts = async () =>{
         try{
           const auth = await Auth.findOne({userID: user.userID}).exec();
           const d = new Date(timeForecast);
-          const adjustedTime = String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0');
+          const adjustedTime = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
           if(auth){
             return {
               subscription: auth.subscription,
@@ -115,7 +115,9 @@ const getSubscriptionAndForecasts = async () =>{
 
 //通知時間30分以内のSettingデータを取得
 const getFilteredSettings = async () =>{
-  const now = new Date();
+  
+  const tzOffset = TIMEZONE_OFFSET.JP;
+  const now = dayjs.utc().add(tzOffset, 'hour').toDate();
   const dayToday = now.toLocaleDateString('ja-JP',{weekday: 'short'});
   const halfHourLater = new Date(now.getTime() + 30 * 60 * 1000);
 
