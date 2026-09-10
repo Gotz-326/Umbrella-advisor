@@ -125,9 +125,7 @@ const urlBase64ToUint8Array = (base64String: Base64URLString) => {
       // 1. 通知の許可と鍵をゲットする
       const subscription = await getPushSubscription();
 
-
       // 2. サインアップAPIに、ユーザー情報と通知の鍵を全部まとめて一気に送る
-      //alert(subscription.endpoint);
       const response = await fetch('/api/users/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,8 +138,8 @@ const urlBase64ToUint8Array = (base64String: Base64URLString) => {
           credentials: 'include',
         });
         const data = await response.json();
-        
         logger.info({data},'data');
+        if (!response.ok) throw new Error(data.message || '登録に失敗しました');
         if (data.success) {
           navigate('/');
         }

@@ -24,7 +24,7 @@ if(uri){
     .then(() => logger.info("DB Atlasに接続完了"))
     .catch(err => logger.error({err}));
 }
-cron.schedule('59 * * * *', async () => {
+cron.schedule('29,59 * * * *', async () => {
   await notifyForecast();
 });
 

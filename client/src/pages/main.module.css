@@ -106,26 +106,34 @@
 
 .modalSetting{
   position: fixed;
-  width: max(400px, 70%);
-  top: 40%;
-  left: 50%;
-  transform: translate(-40%, -40%);
-
+  inset: 0;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
-  border-radius: 8px;
   display: flex;
-  flex-direction: column;
-  /*gap: 15px; /* 各項目の縦の間隔 */
-
   z-index: 2;
 }
-.modalAccount{
+.modalSetting form {
+  width: min(400px, 90vw);
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+}
+.modalAccount {
   position: fixed;
-  width: max(400px, 70%);
-  top: 40%;
-  left: 50%;
-  transform: translate(-40%, -40%);
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 2;
+  padding: 20px;
+}
+
+.modalAccount form {
+  width: min(400px, 90vw);
+  overflow-y: auto;
+  border-radius: 8px;
+  padding: 20px;
 }
 .mask{
   background: rgba(0, 0, 0, 0.5);

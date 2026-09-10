@@ -35,7 +35,7 @@ const MainPage = () => {
   const [settingValues, setSettingValues] = useState(initialSettings);
   const [editingValues, setEditingValues] = useState(initialSettings);
   const [cities, setCities] = useState<Cities[]>([]);
-  const [IsSettingModalOpen, setIsSettingModalOpen] = useState(false);
+  const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);
   const [isAccountModalOpen, setisAccountModalOpen] = useState(false);
   const daysOfWeek = ['日','月','火','水','木','金','土'];
   //const [selectedDays, setSelectedDays] = useState([]);
@@ -156,7 +156,6 @@ const MainPage = () => {
   };
 
   const updateAccount = async () => {
-    setSettingValues(editingValues);
     const response  = await fetch('/api/users/user-data',{
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json'},
@@ -166,8 +165,10 @@ const MainPage = () => {
     if(!response.ok){
       const data = await response.json();
       alert(data);
+    } else {
+      setSettingValues(editingValues);
+      cancelAccount();
     }
-    cancelAccount();
   };
   const updateSetting = async () => {
 
@@ -192,7 +193,6 @@ const MainPage = () => {
   const editAccount = () => {
     setEditingValues(settingValues);
     setisAccountModalOpen(true);
-    cancelAccount();
   };
   const cancelAccount = () => {
     setisAccountModalOpen(false);
@@ -254,23 +254,31 @@ const MainPage = () => {
     }
   };
   const generatePercent = () =>{
-    const percents = [];
+    const percents = [''];
     for(let i = 10; i <= 100; i += 10){
       percents.push(String(i));
     }
     return percents;
   };
-  const generateTimes = () =>{
-    const times = [];
-    for(let h = 0; h < 24; h++){
-      for(let m = 0; m < 60; m += 30){
-        times.push(`${h}:${String(m).padStart(2, '0')}`);
+  //isOnlyHour: true => 1時間刻み　false => 30刻み
+  const generateTimes = (isOnlyHour: boolean) =>{
+    const times = [''];
+    if(isOnlyHour){
+      for(let h = 0; h < 24; h++){
+        times.push(`${h}:00`);
+      }
+    } else {
+      for(let h = 0; h < 24; h++){
+        for(let m = 0; m < 60; m += 30){
+          times.push(`${h}:${String(m).padStart(2, '0')}`);
+        }
       }
     }
      return times;
   };
   const percentOptions = generatePercent();
-  const timeOptions = generateTimes();
+  const timeOptionsHours = generateTimes(true);
+  const timeOptionsHalfHours = generateTimes(false);
 
   const changeTimeFrom = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
@@ -312,7 +320,7 @@ const MainPage = () => {
             通知時刻：{settingValues.notificationTime}
           </div>
         </div>
-        <div>
+        <div className={styles.buttonArea}>
           <button className={styles.settingButton} onClick={editSetting}>
             通知設定
           </button>
@@ -322,7 +330,7 @@ const MainPage = () => {
         </div>
       </div>
 
-      <div id="modalSetting" className={IsSettingModalOpen ? styles.modalSetting : styles.hidden}>
+      <div id="modalSetting" className={isSettingModalOpen ? styles.modalSetting : styles.hidden}>
         <form>
           <div className={styles.uiForm}>
             <label>降水確率</label>
@@ -352,7 +360,6 @@ const MainPage = () => {
           </div>
           <div className={styles.uiForm}>
             {daysOfWeek.map(d =>{
-      //        const isSelected = selectedDays.includes(d);
               const isSelected = editingValues.days.includes(d);
               return(
                 <button 
@@ -368,7 +375,7 @@ const MainPage = () => {
             <div className={styles.timeInput}>
             <label>時間</label>
             <select value={editingValues.timeFrom} onChange={(e) => changeTimeFrom(e)}>
-              {timeOptions.map((t) => (
+              {timeOptionsHours.map((t) => (
                 <option key={t} value={t} className={styles.timeListbox}>
                   {t}
                 </option>
@@ -376,7 +383,7 @@ const MainPage = () => {
             </select>
             〜
             <select value={editingValues.timeTo} onChange={(e) => changeTimeTo(e)}>
-              {timeOptions.map((t) => (
+              {timeOptionsHours.map((t) => (
                 <option key={t} value={t} className={styles.timeListbox}>
                   {t}
                 </option>
@@ -387,19 +394,21 @@ const MainPage = () => {
           <div className={styles.uiForm}>
             <label>通知時刻</label>
             <select value={editingValues.notificationTime} onChange={(e) => changeNotificationTime(e)}>
-              {timeOptions.map((t) => (
+              {timeOptionsHalfHours.map((t) => (
                 <option key={t} value={t} className={styles.timeListbox}>
                   {t}
                 </option>
               ))}
             </select>
           </div>
-          <button className={styles.updateButton} type="button" onClick={updateSetting}>
-            更新
-          </button>
-          <button className={styles.cancelButton} type="button" onClick={cancelSetting}>
-            キャンセル
-          </button>
+          <div className={styles.buttonArea}>
+            <button className={styles.updateButton} type="button" onClick={updateSetting}>
+              更新
+            </button>
+            <button className={styles.cancelButton} type="button" onClick={cancelSetting}>
+              キャンセル
+            </button>
+          </div>
         </form>
       </div>
             <div id="modalAccount" className={isAccountModalOpen ? styles.modalAccount : styles.hidden}>
@@ -410,13 +419,15 @@ const MainPage = () => {
               
             </input>
           </div>
-          <button className={styles.updateButton} type="button" onClick={updateAccount}>
-            更新
-          </button>
-          <button className={styles.cancelButton} type="button" onClick={cancelAccount}>
-            キャンセル
-          </button>
-          <div>
+          <div className={styles.buttonArea}>
+            <button className={styles.updateButton} type="button" onClick={updateAccount}>
+              更新
+            </button>
+            <button className={styles.cancelButton} type="button" onClick={cancelAccount}>
+              キャンセル
+            </button>
+            <div>
+          </div>
           <button className={styles.deleteButton} type="button" onClick={deleteAccount}>
             アカウント削除
           </button>
@@ -425,7 +436,7 @@ const MainPage = () => {
       </div>
       <div
         id="mask"
-        className={isAccountModalOpen ? styles.mask : styles.hidden}
+        className={isSettingModalOpen || isAccountModalOpen? styles.mask : styles.hidden}
       ></div>
     </>
   );

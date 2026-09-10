@@ -117,18 +117,14 @@ const getSubscriptionAndForecasts = async () =>{
 const getFilteredSettings = async () =>{
   
   const tzOffset = TIMEZONE_OFFSET.JP;
-  const now = dayjs.utc().add(tzOffset, 'hour').toDate();
-  const dayToday = now.toLocaleDateString('ja-JP',{weekday: 'short'});
-  const halfHourLater = new Date(now.getTime() + 30 * 60 * 1000);
+  const now = dayjs.utc().add(tzOffset, 'hour');
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+  const dayToday = weekdays[now.day()];
 
-  const formatTime = (date: Date): string =>{
-    const h = String(date.getHours()).padStart(2, '0');
-    const m = String(date.getMinutes()).padStart(2, '0');
-    return `${h}:${m}`;
-  };
-  
-  const strNow = formatTime(now);
-  const str30mLater = formatTime(halfHourLater);
+  const halfHourLater = now.add(30, 'minute');
+
+  const strNow = now.format('HH:mm');
+  const str30mLater = halfHourLater.format('HH:mm');
   const query = strNow < str30mLater
     ? {// 日付またぎなし
         days: dayToday,
