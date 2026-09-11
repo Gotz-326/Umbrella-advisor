@@ -1,13 +1,4 @@
-// self.addEventListener('push', (event) => {
-//     console.log('プッシュ通知を受け取ったよ！');
-//     alert('プッシュ通知を受け取ったよ！');
-// })
-
-
-// Service Workerの型定義を有効にするための宣言
-//declare const self: ServiceWorkerGlobalScope;
-
-// 1. Expressからのプッシュ通知を受け取るイベント
+// Expressからのプッシュ通知を受け取るイベント
 self.addEventListener('push', (event) => {
   console.log('プッシュ通知を受信したよ！');
 
@@ -45,16 +36,16 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// 2. ユーザーが通知をクリックしたときのイベント
+// ユーザーが通知をクリックしたときのイベント
 self.addEventListener('notificationclick', (event) => {
   // ポップアップを閉じる
   event.notification.close();
-
-  // 通知に埋め込んでおいたURL（なければトップページ）を取得
+  // トップページを取得
   const targetUrl = event.notification.data?.url || '/';
 
   event.waitUntil(
-    // すでにアプリのタブが開いているかチェックして、開いていればそこにフォーカス、なければ新しく開く
+    // すでにアプリのタブが開いているかチェックして、開いていればそこにフォーカス、
+    // なければ新しく開く
     self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((windowClients) => {
         for (const client of windowClients) {
@@ -65,6 +56,20 @@ self.addEventListener('notificationclick', (event) => {
         if (self.clients.openWindow) {
           return self.clients.openWindow(targetUrl);
         }
+      })
+  );
+});
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    // 新しい鍵を取り直してサーバーへ送信する処理
+    self.registration.pushManager.subscribe(event.oldSubscription.options)
+      .then((newSubscription) => {
+        return fetch('/api/update-subscription', {
+          method: 'POST',
+          body: JSON.stringify(newSubscription),
+          headers: { 'Content-Type': 'application/json' }
+        });
       })
   );
 });

@@ -4,11 +4,11 @@ import City from '../models/city.ts';
 import 'dotenv/config';
 
 const router = express.Router();
-const port = process.env.PORT;
+const clientPort = process.env.CLIENT_PORT;
 
 router.use(express.json());
 router.use(cors({
-  origin: `http://localhost:${port}`,
+  origin: `http://localhost:${clientPort}`,
   credentials: true
 }));
 

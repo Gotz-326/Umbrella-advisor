@@ -13,13 +13,13 @@ import cookieParser from 'cookie-parser';
 import checkAuth from '../middlewares/checkAuth.ts';
 
 const router = express.Router();
-const port = process.env.PORT;
+const clientPort = process.env.CLIENT_PORT;
 const secret = process.env.SECRET_KEY;
 if(!secret) throw Error('Secret keyの読み込みに失敗しました');
 router.use(express.json());
 router.use(cookieParser());
 router.use(cors({
-  origin: `http://localhost:${port}`, credentials: true
+  origin: `http://localhost:${clientPort}`, credentials: true
  }));
 
 router.post(
