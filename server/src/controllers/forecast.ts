@@ -120,7 +120,7 @@ const getFilteredSettings = async () =>{
   const now = dayjs.utc().add(tzOffset, 'hour');
   const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
   const dayToday = weekdays[now.day()];
-
+  const dayTomorrow = weekdays[now.add(1, 'day').day()];
   const halfHourLater = now.add(30, 'minute');
 
   const strNow = now.format('HH:mm');
@@ -131,10 +131,9 @@ const getFilteredSettings = async () =>{
         notificationTime: { $gte: strNow, $lt: str30mLater }
       }
     : {// 日付またぎあり
-        days: dayToday,
         $or: [
-          { notificationTime: { $gte: strNow } },
-          { notificationTime: { $lt: str30mLater } }
+          { days: dayToday, notificationTime: { $gte: strNow } },
+          { days: dayTomorrow, notificationTime: { $lt: str30mLater } }
         ]
       };
 
