@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import checkAuth from './middlewares/checkAuth.ts';
 import mongoose from 'mongoose';
 import cron from 'node-cron';
+import path from 'path';
 import 'dotenv/config';
 const app = express();
 const port = process.env.PORT || 5000;
@@ -16,6 +17,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use('/api/users', userRouter);
 app.use('/api/cities', cityRouter);
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 if(uri){
   mongoose.connect(uri, {
@@ -30,6 +32,10 @@ cron.schedule('29,59 * * * *', async () => {
 
 app.get('/api/check-auth', checkAuth, (req, res) => {
   res.status(200).json({ authenticated: true });
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 app.listen(port, () => {
