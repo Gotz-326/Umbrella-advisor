@@ -8,16 +8,21 @@ import checkAuth from './middlewares/checkAuth.ts';
 import mongoose from 'mongoose';
 import cron from 'node-cron';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import 'dotenv/config';
 const app = express();
 const port = process.env.PORT || 5000;
 const uri: string | undefined = process.env.MONGODB_URI; 
+const distPath = path.resolve(process.cwd(), 'dist');
+// ESMでは __dirname が存在しないため自前で導出
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(cookieParser());
 app.use(express.json());
 app.use('/api/users', userRouter);
 app.use('/api/cities', cityRouter);
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(distPath, 'public')));
 
 if(uri){
   mongoose.connect(uri, {
@@ -34,7 +39,7 @@ app.get('/api/check-auth', checkAuth, (req, res) => {
   res.status(200).json({ authenticated: true });
 });
 
-app.get('*', (req, res) => {
+app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
