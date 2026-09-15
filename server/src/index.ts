@@ -14,9 +14,6 @@ const app = express();
 const port = process.env.PORT || 5000;
 const uri: string | undefined = process.env.MONGODB_URI; 
 const distPath = path.resolve(process.cwd(), 'dist');
-// ESMでは __dirname が存在しないため自前で導出
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 app.use(cookieParser());
 app.use(express.json());
@@ -40,7 +37,7 @@ app.get('/api/check-auth', checkAuth, (req, res) => {
 });
 
 app.get('/{*splat}', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  res.sendFile(path.join(distPath, 'public', 'index.html'));
 });
 
 app.listen(port, () => {
