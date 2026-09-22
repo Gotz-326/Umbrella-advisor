@@ -19,7 +19,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use('/api/users', userRouter);
 app.use('/api/cities', cityRouter);
-app.use(express.static(path.join(distPath, 'public')));
+app.use(express.static(distPath));
 
 if(uri){
   mongoose.connect(uri, {
