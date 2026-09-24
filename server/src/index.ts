@@ -29,6 +29,7 @@ if(uri){
     .catch(err => logger.error({err}));
 }
 cron.schedule('29,59 * * * *', async () => {
+  logger.info('cron fired: ' + new Date().toISOString());
   await notifyForecast();
 });
 
@@ -37,7 +38,7 @@ app.get('/api/check-auth', checkAuth, (req, res) => {
 });
 
 app.get('/{*splat}', (req, res) => {
-  res.sendFile(path.join(distPath, 'public', 'index.html'));
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(port, () => {
