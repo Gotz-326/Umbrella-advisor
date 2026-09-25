@@ -75,7 +75,7 @@ const sendNotification = async (userSubscription: PushSubscription, weatherMessa
 const getSubscriptionAndForecasts = async () =>{
   const users = await getFilteredSettings();
   if(!users) return;
-
+  logger.info({count: users.length}, '対象ユーザー数');
   const tzOffset = TIMEZONE_OFFSET.JP;
   const now = dayjs.utc().add(tzOffset, 'hour')
   const today = now.format('YYYY-MM-DD');
@@ -87,10 +87,12 @@ const getSubscriptionAndForecasts = async () =>{
     const timeTo = user.timeFrom < user.timeTo? `${today}T${user.timeTo}`: `${tomorrow}T${user.timeTo}`;
     const forecasts = await getForecasts(user.city);
     if(!forecasts) return null;
+    logger.info({timeFrom, timeTo}, '時刻');
     for(const fc of forecasts){
       const timeForecast = fc.time;
       if(timeFrom > timeForecast || timeForecast > timeTo) continue;
       const pop = Number(fc.pop);
+      logger.info({timeForecast, pop, border: user.border}, '判定対象'); 
       if(user.border <= pop){
         try{
           const auth = await Auth.findOne({userID: user.userID}).exec();
@@ -137,6 +139,7 @@ const getFilteredSettings = async () =>{
         ]
       };
 
+  logger.info({query}, 'クエリ');
   try{
     const filteredSettings = await Setting.find(query);
     return filteredSettings;
