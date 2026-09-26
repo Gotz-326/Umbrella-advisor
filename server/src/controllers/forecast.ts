@@ -156,7 +156,12 @@ const getForecasts = async (cityName: string) => {
     const latitude = city.latitude;
     const longitude = city.longitude;
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=precipitation_probability,uv_index&timezone=Asia%2FTokyo`;
-    const response = await fetch(url);
+    let response = await fetch(url);
+    if(response.status === 429){
+      logger.warn('429を検知、5秒待って再試行します');
+      await new Promise(r => setTimeout(r, 5000));
+      response = await fetch(url); // 1回だけリトライ
+    }
     if(!response.ok) throw new Error(`天気情報取得に失敗しました Status:${response.status}`);
     const weatherData = await response.json();
 
