@@ -47,7 +47,7 @@ const notifyForecast =  async () => {
       const pop = info.pop;
       const subsc = info.subscription;
       const message = `傘をお持ちください
-      ${time} に降水確率 ${pop}%です`;
+${time} に降水確率 ${pop}%です`;
       await sendNotification(subsc, message);
 
       logger.info({info}, '通知成功');
@@ -66,7 +66,6 @@ const sendNotification = async (userSubscription: PushSubscription, weatherMessa
     });
 
     await webpush.sendNotification(userSubscription, payload);
-    logger.info({userSubscription}, 'プッシュ通知の送信成功');
   } catch (err) {
     logger.error({err},'通知の送信失敗');
   }
@@ -87,12 +86,11 @@ const getSubscriptionAndForecasts = async () =>{
     const timeTo = user.timeFrom < user.timeTo? `${today}T${user.timeTo}`: `${tomorrow}T${user.timeTo}`;
     const forecasts = await getForecasts(user.city);
     if(!forecasts) return null;
-    logger.info({timeFrom, timeTo}, '時刻');
     for(const fc of forecasts){
       const timeForecast = fc.time;
       if(timeFrom > timeForecast || timeForecast > timeTo) continue;
       const pop = Number(fc.pop);
-      logger.info({timeForecast, pop, border: user.border}, '判定対象'); 
+      logger.info({timeFrom, timeTo, timeForecast, pop, border: user.border}, '判定対象'); 
       if(user.border <= pop){
         try{
           const auth = await Auth.findOne({userID: user.userID}).exec();
@@ -158,7 +156,7 @@ const getForecasts = async (cityName: string) => {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=precipitation_probability,uv_index&timezone=Asia%2FTokyo`;
     let response = await fetch(url);
     if(response.status === 429){
-      logger.warn('429を検知、5秒待って再試行します');
+      logger.warn('Response 429を検知しました、5秒後に再試行します');
       await new Promise(r => setTimeout(r, 5000));
       response = await fetch(url); // 1回だけリトライ
     }
