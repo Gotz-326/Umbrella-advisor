@@ -47,7 +47,7 @@ const notifyForecast =  async () => {
       const pop = info.pop;
       const subsc = info.subscription;
       const message = `傘をお持ちください
-      ${time} に降水確率 ${pop}%です`;
+${time} に降水確率 ${pop}%です`;
       await sendNotification(subsc, message);
 
       logger.info({info}, '通知成功');
@@ -66,7 +66,6 @@ const sendNotification = async (userSubscription: PushSubscription, weatherMessa
     });
 
     await webpush.sendNotification(userSubscription, payload);
-    logger.info({userSubscription}, 'プッシュ通知の送信成功');
   } catch (err) {
     logger.error({err},'通知の送信失敗');
   }
@@ -75,7 +74,7 @@ const sendNotification = async (userSubscription: PushSubscription, weatherMessa
 const getSubscriptionAndForecasts = async () =>{
   const users = await getFilteredSettings();
   if(!users) return;
-
+  logger.info({count: users.length}, '対象ユーザー数');
   const tzOffset = TIMEZONE_OFFSET.JP;
   const now = dayjs.utc().add(tzOffset, 'hour')
   const today = now.format('YYYY-MM-DD');
@@ -91,6 +90,7 @@ const getSubscriptionAndForecasts = async () =>{
       const timeForecast = fc.time;
       if(timeFrom > timeForecast || timeForecast > timeTo) continue;
       const pop = Number(fc.pop);
+      logger.info({timeFrom, timeTo, timeForecast, pop, border: user.border}, '判定対象'); 
       if(user.border <= pop){
         try{
           const auth = await Auth.findOne({userID: user.userID}).exec();
@@ -137,6 +137,7 @@ const getFilteredSettings = async () =>{
         ]
       };
 
+  logger.info({query}, 'クエリ');
   try{
     const filteredSettings = await Setting.find(query);
     return filteredSettings;
@@ -153,7 +154,12 @@ const getForecasts = async (cityName: string) => {
     const latitude = city.latitude;
     const longitude = city.longitude;
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=precipitation_probability,uv_index&timezone=Asia%2FTokyo`;
-    const response = await fetch(url);
+    let response = await fetch(url);
+    if(response.status === 429){
+      logger.warn('Response 429を検知しました、5秒後に再試行します');
+      await new Promise(r => setTimeout(r, 5000));
+      response = await fetch(url); // 1回だけリトライ
+    }
     if(!response.ok) throw new Error(`天気情報取得に失敗しました Status:${response.status}`);
     const weatherData = await response.json();
 
