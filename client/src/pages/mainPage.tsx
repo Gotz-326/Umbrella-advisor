@@ -265,12 +265,12 @@ const MainPage = () => {
     const times = [''];
     if(isOnlyHour){
       for(let h = 0; h < 24; h++){
-        times.push(`${h}:00`);
+        times.push(`${String(h).padStart(2, '0')}:00`);
       }
     } else {
       for(let h = 0; h < 24; h++){
         for(let m = 0; m < 60; m += 30){
-          times.push(`${h}:${String(m).padStart(2, '0')}`);
+          times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
         }
       }
     }
