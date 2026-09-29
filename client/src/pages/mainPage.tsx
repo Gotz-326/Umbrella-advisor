@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Select from 'react-select';
+import Select, { createFilter } from 'react-select';
 import { useNavigate } from 'react-router-dom';
 import styles from './main.module.css';
 import { logger } from '../../../logger.ts';
@@ -13,12 +13,14 @@ interface Settings{
     notificationTime: string,
 }
 interface Cities{
+  _id: string;
   ja: string;
   en: string;
 }
 interface CityOption {
   value: string,
   label: string,
+  en: string,
 }
 const MainPage = () => {
   const navigate = useNavigate();
@@ -164,10 +166,11 @@ const MainPage = () => {
     });
     if(!response.ok){
       const data = await response.json();
-      alert(data);
+      alert(data.message);
     } else {
       setSettingValues(editingValues);
       cancelAccount();
+      alert('アカウント設定を更新しました');
     }
   };
   const updateSetting = async () => {
@@ -181,10 +184,11 @@ const MainPage = () => {
 
     if(!response.ok){
       const data = await response.json();
-      alert(data);
+      alert(data.message);
     } else {    
       setSettingValues(editingValues);
       cancelSetting();
+      alert('通知設定を更新しました\n設定した閾値以上の予報があれば通知時刻にお知らせします');
     }
   };
   const cancelSetting = () => {
@@ -214,12 +218,13 @@ const MainPage = () => {
     }
   };
   const cityOptions: CityOption[] = cities.map(c =>({
-    value: c.en,
+    value: c._id,
     label: c.ja,
+    en: c.en,
   }));
 
   const getJapaneseCity = () =>{
-    const city = cities.find(c => c.en === settingValues.city);
+    const city = cities.find(c => c._id === settingValues.city);
     return city? city.ja: '指定なし';
   };
   const changeBorder = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -348,12 +353,15 @@ const MainPage = () => {
           <div className={styles.uiForm}>
           <label>エリア</label>
             <Select
-            className={styles.cityListbox}
+              className={styles.cityListbox}
               options={cityOptions}
               value={cityOptions.find(opt => opt.value === editingValues.city)}
               onChange={(selectedOption) => {
                 setEditingValues({...editingValues, city: selectedOption? selectedOption.value: ''});
               }}
+              filterOption={createFilter<CityOption>({
+                stringify: (option) => `${option.label} ${option.data.en}`,
+              })}
               placeholder="都市を入力"
               isClearable
             />
