@@ -146,11 +146,11 @@ const getFilteredSettings = async () =>{
   }
 };
 
-const getForecasts = async (cityName: string) => {
+const getForecasts = async (cityID: string) => {
   //取得時刻～翌日24:00までのデータに絞り込んだ天気情報を取得する
   try{
-    const city = await City.findOne({en: cityName}).exec();
-    if(!city) throw new Error(`都市取得に失敗しました City:${cityName}`);
+    const city = await City.findOne({_id: cityID}).exec();
+    if(!city) throw new Error(`都市取得に失敗しました City:${cityID}`);
     const latitude = city.latitude;
     const longitude = city.longitude;
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=precipitation_probability,uv_index&timezone=Asia%2FTokyo`;
