@@ -201,7 +201,7 @@ router.patch(
       const setting = await Setting.findOneAndUpdate(
         {userID},
         {$set: settingData},
-        {new: true, runValidators:true}
+        {returnDocument: 'after', runValidators:true}
       );
       if(!setting){
       logger.info({userID}, '設定データが見つかりませんでした');
@@ -235,7 +235,7 @@ router.patch(
       const user = await Auth.findOneAndUpdate(
         {userID},
         {$set: userData},
-        {new: true, runValidators:true}
+        {returnDocument: 'after', runValidators:true}
       );
       if(!user){
       logger.info({userID}, 'ユーザデータが見つかりませんでした');
@@ -272,12 +272,12 @@ router.patch(
       const setting = await Setting.findOneAndUpdate(
         {userID},
         {$set: settingData},
-        {new: true, runValidators:true, session}
+        {returnDocument: 'after', runValidators:true, session}
       );
       const user = await Auth.findOneAndUpdate(
         {userID},
         {$set: settingData},
-        {new: true, runValidators:true, session}
+        {returnDocument: 'after', runValidators:true, session}
       );
       if(!setting){
         await session.abortTransaction();
