@@ -76,6 +76,7 @@ const getSubscriptionAndForecasts = async () =>{
   const now = dayjs.utc().add(tzOffset, 'hour')
   const today = now.format('YYYY-MM-DD');
   const tomorrow = now.add(1, 'day').format('YYYY-MM-DD');
+  const timeNow = now.format('YYYY-MM-DDTHH:mm');
   const subscriptionAndForecasts = await Promise.all(
     
   users.map(async (user) => {
@@ -85,7 +86,7 @@ const getSubscriptionAndForecasts = async () =>{
     if(!forecasts) return null;
     for(const fc of forecasts){
       const timeForecast = fc.time;
-      if(timeFrom > timeForecast || timeForecast > timeTo) continue;
+      if(timeFrom > timeForecast || timeForecast > timeTo || timeNow > timeForecast) continue;
       const pop = Number(fc.pop);
       logger.info({timeFrom, timeTo, timeForecast, pop, border: user.border}, '判定対象'); 
       if(user.border <= pop){
@@ -112,7 +113,7 @@ const getSubscriptionAndForecasts = async () =>{
 
 //notificationTimeの6時間前からキャッシュを準備する
 const warmForecastCache = async () => {
-  const upcomingUsers = await getFilteredSettings(370);   //6h + 10m
+  const upcomingUsers = await getFilteredSettings(360);
   if(!upcomingUsers) return;
   const cities = [...new Set(upcomingUsers.map(u => u.city))];
   await Promise.all(cities.map(c => getForecastsCached(c)));
@@ -172,12 +173,7 @@ const getForecasts = async (cityID: string) => {
     const latitude = city.latitude;
     const longitude = city.longitude;
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=precipitation_probability,uv_index&timezone=Asia%2FTokyo`;
-    let response = await fetch(url);
-    if(response.status === 429){
-      logger.warn('Response 429を検知しました、5秒後に再試行します');
-      await new Promise(r => setTimeout(r, 5000));
-      response = await fetch(url); // 1回だけリトライ
-    }
+    const response = await fetch(url);
     if(!response.ok) throw new Error(`天気情報取得に失敗しました Status:${response.status}`);
     const weatherData = await response.json();
 
@@ -187,7 +183,7 @@ const getForecasts = async (cityID: string) => {
     let index = weatherData.hourly.time.indexOf(timeNow);
     if(index < 0) index = 0;
     const times = weatherData.hourly.time.slice(index, 72);
-    const precipitationProbability = weatherData.hourly.precipitation_probability.slice(index, 48);
+    const precipitationProbability = weatherData.hourly.precipitation_probability.slice(index, 72);
     const uvIndex = weatherData.hourly.uv_index.slice(index, 72);
 
     const forecasts: ForecastItem[] = times.map((time: string, i: number) => ({
