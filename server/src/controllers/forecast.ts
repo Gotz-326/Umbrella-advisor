@@ -14,6 +14,9 @@ const privateKey = process.env.PRIVATE_KEY;
 const TIMEZONE_OFFSET: Record<string, number> = {
   JP: 9,
 };
+const forecastCache = new Map<string, ForecastCacheInterface>();
+const CACHE_TTL = 6 * 60 * 60 * 1000;   //6時間以内であれば更新せず使う
+
 webpush.setVapidDetails(
   'mailto:mosh326@gmail.com',
   publicKey || '',
@@ -21,25 +24,19 @@ webpush.setVapidDetails(
 )
 
 interface ForecastItem {
-  time: string, // ISO 8601形式の時間の配列
-  pop: number, // 降水確率 (0 〜 100)
-  uvIndex: number,
+  time: string; // ISO 8601形式の時間の配列
+  pop: number; // 降水確率 (0 〜 100)
+  uvIndex: number;
 }
 
-// const test = async() =>{
-//     const url = `https://api.openweathermap.org/data/2.5/forecast?q=uji&units=metric&appid=${apikey}`;
-//   const response = await fetch(url);
-//   const data = await response.json();
-//   // logger.info(data.list[0]);
-//   logger.info({auths});
-//   const auth = auths.find(a => a.email === 'mosh326@gmail.com');
-//   const subsc = auth.subscription;
-//   await sendNotification(subsc, '快晴');
-// };
+interface ForecastCacheInterface {
+  data: ForecastItem[];
+  cachedAt: number;
+}
 
 const notifyForecast =  async () => {
   try{
-
+    await warmForecastCache();
     const infoToNotify = await getSubscriptionAndForecasts();
     if(!infoToNotify) return;
     for(const info of infoToNotify){
@@ -84,7 +81,7 @@ const getSubscriptionAndForecasts = async () =>{
   users.map(async (user) => {
     const timeFrom = `${today}T${user.timeFrom}`;
     const timeTo = user.timeFrom < user.timeTo? `${today}T${user.timeTo}`: `${tomorrow}T${user.timeTo}`;
-    const forecasts = await getForecasts(user.city);
+    const forecasts = await getForecastsCached(user.city);
     if(!forecasts) return null;
     for(const fc of forecasts){
       const timeForecast = fc.time;
@@ -113,38 +110,59 @@ const getSubscriptionAndForecasts = async () =>{
     return subscriptionAndForecasts.filter(result => result !== null);
 };
 
-//通知時間30分以内のSettingデータを取得
-const getFilteredSettings = async () =>{
+//notificationTimeの6時間前からキャッシュを準備する
+const warmForecastCache = async () => {
+  const upcomingUsers = await getFilteredSettings(370);   //6h + 10m
+  if(!upcomingUsers) return;
+  const cities = [...new Set(upcomingUsers.map(u => u.city))];
+  await Promise.all(cities.map(c => getForecastsCached(c)));
+};
+
+
+//通知時間10分以内またはキャッシュ確保時間以内のSettingデータを取得
+const getFilteredSettings = async (leadTimeMinute = 10) =>{
   
   const tzOffset = TIMEZONE_OFFSET.JP;
   const now = dayjs.utc().add(tzOffset, 'hour');
   const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
   const dayToday = weekdays[now.day()];
   const dayTomorrow = weekdays[now.add(1, 'day').day()];
-  const halfHourLater = now.add(30, 'minute');
+  const leadTimeLater = now.add(leadTimeMinute, 'minute');
 
   const strNow = now.format('HH:mm');
-  const str30mLater = halfHourLater.format('HH:mm');
-  const query = strNow < str30mLater
+  const strleadTimeLater = leadTimeLater.format('HH:mm');
+  const query = strNow < strleadTimeLater
     ? {// 日付またぎなし
         days: dayToday,
-        notificationTime: { $gte: strNow, $lt: str30mLater }
+        notificationTime: { $gte: strNow, $lt: strleadTimeLater }
       }
     : {// 日付またぎあり
         $or: [
           { days: dayToday, notificationTime: { $gte: strNow } },
-          { days: dayTomorrow, notificationTime: { $lt: str30mLater } }
+          { days: dayTomorrow, notificationTime: { $lt: strleadTimeLater } }
         ]
       };
 
   logger.info({query}, 'クエリ');
   try{
-    const filteredSettings = await Setting.find(query);
-    return filteredSettings;
+    return await Setting.find(query);
   } catch(err){
     logger.error({err}, 'データ参照に失敗しました');
   }
 };
+
+const getForecastsCached = async (cityID: string): Promise<ForecastItem[] | null> => {
+  const cached = forecastCache.get(cityID);
+  const now = Date.now();
+  if(cached && now - cached.cachedAt < CACHE_TTL) return cached.data;
+  const fresh = await getForecasts(cityID);
+  if(fresh){
+    forecastCache.set(cityID, {data: fresh, cachedAt: now});
+    return fresh;
+  }
+  return null;
+};
+
 
 const getForecasts = async (cityID: string) => {
   //取得時刻～翌日24:00までのデータに絞り込んだ天気情報を取得する
@@ -168,9 +186,9 @@ const getForecasts = async (cityID: string) => {
     const timeNow = now.format('YYYY-MM-DDTHH:00');
     let index = weatherData.hourly.time.indexOf(timeNow);
     if(index < 0) index = 0;
-    const times = weatherData.hourly.time.slice(index, 48);
+    const times = weatherData.hourly.time.slice(index, 72);
     const precipitationProbability = weatherData.hourly.precipitation_probability.slice(index, 48);
-    const uvIndex = weatherData.hourly.uv_index.slice(index, 48);
+    const uvIndex = weatherData.hourly.uv_index.slice(index, 72);
 
     const forecasts: ForecastItem[] = times.map((time: string, i: number) => ({
         time: time, // ISO 8601形式の時間の配列
