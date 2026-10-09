@@ -15,7 +15,7 @@ const TIMEZONE_OFFSET: Record<string, number> = {
   JP: 9,
 };
 const forecastCache = new Map<string, ForecastCacheInterface>();
-const CACHE_TTL = 6 * 60 * 60 * 1000;   //6時間以内であれば更新せず使う
+const CACHE_TTL = 6 * 60 * 60 * 1000 + (10 * 60 * 1000) ;   //6時間(+10分)以内であれば更新せず使う
 
 webpush.setVapidDetails(
   'mailto:mosh326@gmail.com',
