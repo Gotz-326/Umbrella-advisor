@@ -71,7 +71,11 @@ const sendNotification = async (userSubscription: PushSubscription, weatherMessa
 const getSubscriptionAndForecasts = async () =>{
   const users = await getFilteredSettings();
   if(!users) return;
-  logger.info({count: users.length}, '対象ユーザー数');
+  if(users.length = 0){
+    logger.info('対象ユーザーなし');
+  } else {
+    users.map(u => logger.info({name: u.userName}, '対象ユーザー'));
+  }
   const tzOffset = TIMEZONE_OFFSET.JP;
   const now = dayjs.utc().add(tzOffset, 'hour')
   const today = now.format('YYYY-MM-DD');
@@ -121,30 +125,32 @@ const warmForecastCache = async () => {
 
 
 //通知時間10分以内またはキャッシュ確保時間以内のSettingデータを取得
-const getFilteredSettings = async (leadTimeMinute = 10) =>{
+const getFilteredSettings = async (offsetTime = -10) =>{
   
   const tzOffset = TIMEZONE_OFFSET.JP;
   const now = dayjs.utc().add(tzOffset, 'hour');
   const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-  const dayToday = weekdays[now.day()];
-  const dayTomorrow = weekdays[now.add(1, 'day').day()];
-  const leadTimeLater = now.add(leadTimeMinute, 'minute');
+  const beforeOrAfter = now.add(offsetTime, 'minute');
+  const start = offsetTime < 0 ? beforeOrAfter : now;
+  const end = offsetTime < 0 ?  now : beforeOrAfter;
 
-  const strNow = now.format('HH:mm');
-  const strleadTimeLater = leadTimeLater.format('HH:mm');
-  const query = strNow < strleadTimeLater
-    ? {// 日付またぎなし
-        days: dayToday,
-        notificationTime: { $gte: strNow, $lt: strleadTimeLater }
+  const strStart = start.format('HH:mm');
+  const strEnd = end.format('HH:mm');
+  const dayStart = weekdays[start.day()];
+  const dayEnd = weekdays[end.day()];
+
+  const query = strStart < strEnd
+    ? { // 日付またぎなし
+        days: dayStart,
+        notificationTime: { $gt: strStart, $lte: strEnd }
       }
-    : {// 日付またぎあり
+    : { // 日付またぎあり
         $or: [
-          { days: dayToday, notificationTime: { $gte: strNow } },
-          { days: dayTomorrow, notificationTime: { $lt: strleadTimeLater } }
+          { days: dayStart, notificationTime: { $gt: strStart } },
+          { days: dayEnd, notificationTime: { $lte: strEnd } }
         ]
       };
 
-  logger.info({query}, 'クエリ');
   try{
     return await Setting.find(query);
   } catch(err){
@@ -158,6 +164,7 @@ const getForecastsCached = async (cityID: string): Promise<ForecastItem[] | null
   if(cached && now - cached.cachedAt < CACHE_TTL) return cached.data;
   const fresh = await getForecasts(cityID);
   if(fresh){
+    logger.info({fresh}, '天気情報をキャッシュに保存します');
     forecastCache.set(cityID, {data: fresh, cachedAt: now});
     return fresh;
   }
