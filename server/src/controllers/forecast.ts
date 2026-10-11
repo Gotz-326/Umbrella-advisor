@@ -71,7 +71,7 @@ const sendNotification = async (userSubscription: PushSubscription, weatherMessa
 const getSubscriptionAndForecasts = async () =>{
   const users = await getFilteredSettings();
   if(!users) return;
-  if(users.length = 0){
+  if(users.length === 0){
     logger.info('対象ユーザーなし');
   } else {
     users.map(u => logger.info({name: u.userName}, '対象ユーザー'));
