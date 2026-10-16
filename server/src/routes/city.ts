@@ -19,7 +19,6 @@ router.get('/', async (req, res) => {
   } catch(err){
       return res.status(500).json({
       message: 'データが取得できませんでした',
-      //message: JSON.stringify(cities)
     });
   }
 });
