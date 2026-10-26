@@ -24,6 +24,19 @@ const authSchema = new mongoose.Schema({
     required: false,
     default: null,
   },
+  role: {
+    type: String,
+    required: true,
+    default: 'user',
+  },
+  createdAt: {
+    type: Date,
+    required: false,
+  },
+  lastLoggedIn: {
+    type: Date,
+    required: false,
+  },
 });
 
 const Auth = mongoose.model('Auth', authSchema);

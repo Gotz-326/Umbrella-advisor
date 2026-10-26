@@ -27,42 +27,52 @@ router.post(
   body('email').isEmail(),
   body('password').isLength({ min: 7 }),
   async (req, res) => {
-    const email = req.body.email;
-    const password = req.body.password;
-    const errors = validationResult(req);
-    if (!errors.isEmpty())
-      return res.status(400).json({ errors: errors.array() });
-// const user = auths.find((user) => user.email === email);
-    const user = await Auth.findOne({ email }).exec();
-    if (!user) return res.status(401).json({ message: '未登録のユーザーです' });
+    try{
+      const email = req.body.email;
+      const password = req.body.password;
+      const errors = validationResult(req);
+      if (!errors.isEmpty())
+        return res.status(400).json({ errors: errors.array() });
+      const user = await Auth.findOne({ email }).exec();
+      if (!user) return res.status(401).json({ message: '未登録のユーザーです' });
 
-    const userID = user.userID;
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(401).json({ message: 'パスワードが正しくありません' });
+      const userID = user.userID;
+      const role = user.role;
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch)
+        return res.status(401).json({ message: 'パスワードが正しくありません' });
+      await Auth.findOneAndUpdate(
+        {email},
+        {$set: {lastLoggedIn: new Date()}},
+        {returnDocument: 'after', runValidators: true}
+      );
+      const token = await jwt.sign(
+        {
+          userID,
+          email,
+          role,
+        },
+        secret,
+        {
+          expiresIn: '5d',
+        }
+      );
 
-    const token = await jwt.sign(
-      {
-        userID,
-        email,
-      },
-      secret,
-      {
-        expiresIn: '5d',
-      }
-    );
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 5 * 24 * 60 * 60 * 1000,
-    });
-    res.status(200).json({
-      success: true,
-      message: `Email: ${email} login succeeded`,
-    });
-    logger.info({email}, 'Login succeeded!')
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: 5 * 24 * 60 * 60 * 1000,
+      });
+      res.status(200).json({
+        success: true,
+        message: `Email: ${email} login succeeded`,
+      });
+      logger.info({email}, 'Login succeeded!')
+    } catch(err){
+      logger.error({ err }, 'Login error');
+      res.status(500).json({ message: 'サーバーエラーが発生しました' });
+    }
   }
 );
 
@@ -103,13 +113,12 @@ router.post(
         email,
         password: hashedPassword,
         subscription,
+        role: 'user',
+        createdAt: new Date(),
+        lastLoggedIn: new Date(),
       });
-      try{
-        await newUser.save();
-        logger.info({newUser}, 'DB保存に成功')
-      } catch(err){
-        logger.error({err}, 'DB保存に失敗')
-      }
+      await newUser.save();
+      logger.info({userID: newUser.userID}, 'DB保存に成功');
 
       const newSetting = new Setting({
         userID: userID,
@@ -121,13 +130,9 @@ router.post(
         timeTo: '',
         notificationTime: '', 
       });
-      try{
-        await newSetting.save();
-        logger.info({newSetting}, 'DB保存に成功')
-      } catch(err){
-        logger.error({err}, 'DB保存に失敗')
-        return res.status(500).json({message: 'ユーザー登録に失敗'});
-      }
+      await newSetting.save();
+      logger.info({newSetting}, 'DB保存に成功')
+
       res.cookie('token', token, {
         httpOnly: true,
         secure: true,
@@ -142,7 +147,6 @@ router.post(
       logger.error({ err }, 'Sign up error');
       res.status(500).json({ message: 'サーバーエラーが発生しました' });
     }
-    //res.send(auth);
   }
 );
 

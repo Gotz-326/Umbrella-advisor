@@ -1,4 +1,5 @@
 import express from 'express';
+import adminRouter from './routes/admin.ts';
 import userRouter from './routes/user.ts';
 import cityRouter from './routes/city.ts';
 import notifyForecast from './controllers/forecast.ts';
@@ -17,6 +18,7 @@ const distPath = path.resolve(process.cwd(), 'dist');
 
 app.use(cookieParser());
 app.use(express.json());
+app.use('/api/admin', adminRouter);
 app.use('/api/users', userRouter);
 app.use('/api/cities', cityRouter);
 app.use(express.static(distPath));
@@ -29,7 +31,6 @@ if(uri){
     .catch(err => logger.error({err}));
 }
 cron.schedule('*/30 * * * *', async () => {
-  logger.info('cron fired: ' + new Date().toISOString());
   await notifyForecast();
 });
 
