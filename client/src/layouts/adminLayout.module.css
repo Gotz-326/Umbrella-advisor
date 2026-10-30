@@ -1,0 +1,68 @@
+.container{
+  background: lemonchiffon;
+}
+.admin {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px; 
+  font-family: system-ui, sans-serif; 
+}
+.adminHead {
+  display: flex; 
+  flex-wrap: wrap; 
+  align-items: center; 
+  justify-content: space-between;
+  font-size: larger;
+}
+
+.adminHead input {
+  padding: 8px 10px; 
+  border: 1px solid #b8c1cc; 
+  border-radius: 6px; 
+  min-width: 240px; 
+  font-size: 0.95rem;
+}
+.adminNote {
+  font-size: 0.9rem; 
+  margin: 12px 0 6px;
+}
+.adminError {
+  color: #b42318;
+}
+.adminTableWrap {
+  overflow-x: auto; 
+  border: 1px solid #d9e0e7; 
+  border-radius: 6px;
+}
+.adminTable {
+  width: 100%; 
+  border-collapse: collapse; 
+}
+.adminTable th, .adminTable td {
+  padding: 10px 12px; 
+  text-align: left; 
+  white-space: nowrap;
+}
+.adminTable thead {
+  background: whitesmoke;
+}
+.adminTable tbody tr + tr td {
+  border-top: 1px solid #e6ebf0;
+}
+.adminTable tbody tr:hover {
+  background: #f8fafc;
+}
+.badgeadmin {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dbeafe; 
+  color: blue;
+}
+.badgeuser {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e6ebf0; 
+  color: #333333;
+}
