@@ -54,9 +54,6 @@ const fetchSettings = async(): Promise<AdminSetting[]> => {
   return response.json();
 };
 
-const formatJst = (iso: string) =>
-  dayjs(iso).tz("Asia/Tokyo").format("YYYY/MM/DD HH:mm");
-
 const AdminUserPage = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,8 +121,8 @@ const AdminUserPage = () => {
                           {u.role === "admin" ? "管理者" : "一般"}
                         </span>
                       </td>
-                      <td>{u.createdAt}</td>
-                      <td>{u.lastLoggedIn}</td>
+                      <td>{u.createdAt ? dayjs(u.createdAt).tz("Asia/Tokyo").format("YYYY/MM/DD HH:mm") : ''}</td>
+                      <td>{u.lastLoggedIn ? dayjs(u.lastLoggedIn).tz("Asia/Tokyo").format("YYYY/MM/DD HH:mm") : ''}</td>
                     </tr>
                   ))
                 )}

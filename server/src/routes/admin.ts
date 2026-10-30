@@ -7,7 +7,6 @@ import {logger} from '../../../logger.ts';
 import Setting from '../models/setting.ts';
 import Auth from '../models/auth.ts';
 import City from '../models/city.ts'
-import { constants } from 'buffer';
 import checkAdmin from '../middlewares/checkAdmin.ts';
 
 const router = express.Router();
@@ -21,7 +20,6 @@ router.use(cors({
 router.get('/users', checkAuth, checkAdmin, async (req: AuthRequest, res: Response) =>{
   if(!req.user) return res.status(401).json({message: '認証情報がありません'});
   try{
-    //const auths = await Auth.find({projection: {password: 0, subscription: 0}});
     const auths = await Auth.find({}).select('-password -subscription');
     return res.status(200).json(auths);
   } catch(err){

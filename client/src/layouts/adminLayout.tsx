@@ -1,3 +1,4 @@
+import styles from './adminLayout.module.css';
 import { NavLink, Outlet } from "react-router-dom";
 const tabs = [
   { to: "users", label: "ユーザー一覧" },
@@ -6,7 +7,7 @@ const tabs = [
 
 const AdminLayout = () => {
   return (
-    <div className="admin">
+    <div className={styles.admin}>
       <nav style={{ display: "flex", gap: 4, overflowX: "auto", borderBottom: "1px solid #d9e0e7" }}>
         {tabs.map(t => (
           <NavLink
