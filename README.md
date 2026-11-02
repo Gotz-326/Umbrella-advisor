@@ -2,7 +2,7 @@
 
 「今日傘いる？」を毎朝調べなくて済むように作った、傘の要否を知らせてくれるアプリです。
 
-<img src="docs/demo1.gif" alt="デモ1" width="400"><img src="docs/demo2.gif" alt="デモ2" width="400">
+<img src="docs/demo1.gif" alt="デモ1" height="500"><img src="docs/demo2.gif" alt="デモ2" height="500">
 <img src="docs/demo3.gif" alt="デモ3" width="600">
 
 配布URL：https://umbrella-advisor.onrender.com
