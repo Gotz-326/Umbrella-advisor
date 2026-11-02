@@ -16,7 +16,7 @@ React・Express・MongoDBをTypeScriptで通して書き、Renderにデプロイ
 
 設定できる項目は次のとおりです。
 
-- 通知先のメールアドレス
+- アカウント登録用メールアドレス
 - 都市
 - 降水確率のしきい値
 - 天気を確認する時間帯
@@ -59,7 +59,8 @@ cron のタイムゾーンを指定できず、時刻がずれました。
 **日時のズレ**
 Open-Meteo の時刻はタイムゾーン情報のない文字列で、Render のサーバーは UTC です。
 Date を使うと、ローカルでは合っていた日付が本番だけずれました。
-今は dayjs の `.tz('Asia/Tokyo')` に統一しています。
+サーバー側の予報処理では `dayjs.utc().add(tzOffset, 'hour')` を使い、
+管理画面では `.tz('Asia/Tokyo')` を使っています
 
 ### コードの書き方
 
@@ -105,8 +106,11 @@ npm run dev
 `.env` に必要な値:
 
 ```
-MONGODB_URI=
-SECRET_KEY=
+ MONGODB_URI=
+ SECRET_KEY=
+ PORT=5000
+ PUBLIC_KEY=BDq6t0QhzhcmVpbWK3VBZnwaARUhUpSNq9G1VDh1BI0f_tXPDONRLhl6TESTh8A-PyFNoW3Oj1ChZA1dV4uXZGw
+ PRIVATE_KEY=
 ```
 
 ## 今後やること
