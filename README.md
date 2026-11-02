@@ -2,8 +2,7 @@
 
 「今日傘いる？」を毎朝調べなくて済むように作った、傘の要否を知らせてくれるアプリです。
 
-<img src="docs/demo1.gif" alt="デモ1" width="400">
-<img src="docs/demo2.gif" alt="デモ2" width="400">
+<img src="docs/demo1.gif" alt="デモ1" width="400"><img src="docs/demo2.gif" alt="デモ2" width="400">
 <img src="docs/demo3.gif" alt="デモ3" width="600">
 
 配布URL：https://umbrella-advisor.onrender.com
@@ -40,29 +39,24 @@ React・Express・MongoDBをTypeScriptで通して書き、Renderにデプロイ
 ### 通知まわり
 
 **sw.js がブラウザから取得できない**
-
 Service Worker が登録できず調べたところ、`/sw.js` にブラウザからアクセスできませんでした。
 原因は vite.config.ts の設定不足で、`client/public` フォルダが無視されていたことです。
 設定を直して解決しました。
 
 **WebIDE では通知の動作確認ができない**
-
 通知まわりは WebIDE 上では動かず、確認できませんでした。
 
 **Windows の通知設定がオフだった**
-
 通知が出ない原因は、Windows 側の通知設定がオフだったことでした。
 コードを疑う前に、OS とブラウザの通知設定を見るべきでした。
 
 ### 実行環境・スケジュール
 
 **WebContainer の cron で Asia/Tokyo を指定できない**
-
 cron のタイムゾーンを指定できず、時刻がずれました。
 今は別の Cron Job をやめて、Express の中で30分おきに天気をチェックしています。
 
 **日時のズレ**
-
 Open-Meteo の時刻はタイムゾーン情報のない文字列で、Render のサーバーは UTC です。
 Date を使うと、ローカルでは合っていた日付が本番だけずれました。
 今は dayjs の `.tz('Asia/Tokyo')` に統一しています。
@@ -70,34 +64,27 @@ Date を使うと、ローカルでは合っていた日付が本番だけずれ
 ### コードの書き方
 
 **map の中で await が使えない**
-
 `map` のコールバックでは `await` が使えません。async にしても Promise の配列が返るだけだったので、`Promise.all` で包むか `for...of` で回しています。
 
 **fetch は 4xx / 5xx で例外を投げない**
-
 `catch` に入るのはネットワークエラーだけなので。
 `response.ok` を見て、自分で throw するようにしました。
 
 **複数コレクションの更新にはトランザクション**
-
 `Promise.all` で並列に更新すると、途中で失敗してもロールバックされないので、
 複数のコレクションをまたぐ更新は Mongoose のセッションでトランザクションにしています。
 
 ### DB・外部API
-
 **MongoDB Atlas に接続できない**
-
 `mongodb+srv://` の接続文字列でエラーが出たため、マルチホストURIに切り替えて解決しました。
 
 **429 Too Many Requests で天気が取れない**
-
 天気APIの呼び出しが ステータス429 で失敗しました。
 Render無料版の共有アウトバウンドIPが原因でレート制限に該当したと考え、
 有料版の専用IPに切替えることが根本解決として期待できますが、
 今回は事前にキャッシュを取得することで緩和措置を取りました。
 
 **都市の選択を `_id` キーに変更**
-
 同名の都市があり、英語名をキーにすると一部の都市で正しくデータが取れませんでした。
 選択値は `_id` にして、react-select の `filterOption` で英語名でも検索できるようにしています。
 
